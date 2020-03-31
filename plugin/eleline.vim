@@ -19,6 +19,10 @@ let s:gui = has('gui_running')
 let s:is_win = has('win32')
 let s:jobs = {}
 
+function! PabloProject() abort
+  return '  '.fnamemodify(getcwd(), ':t').' '
+endfunction
+
 function! ElelineBufnrWinnr() abort
   let l:bufnr = bufnr('%')
   if !s:gui
@@ -195,6 +199,7 @@ endfunction
 
 " https://github.com/liuchengxu/eleline.vim/wiki
 function! s:StatusLine() abort
+  let l:project = s:def('PabloProject')
   let l:bufnr_winnr = s:def('ElelineBufnrWinnr')
   let l:paste = s:def('ElelinePaste')
   let l:curfname = s:def('ElelineCurFname')
@@ -206,11 +211,15 @@ function! s:StatusLine() abort
   let l:lcn = '%{ElelineLCN()}'
   let l:coc = '%{ElelineCoc()}'
   let l:vista = '%#ElelineVista#%{ElelineVista()}%*'
-  let l:prefix = l:bufnr_winnr.l:paste
-  let l:common = l:curfname.l:branch.l:status.l:error.l:warning.l:tags.l:lcn.l:coc.l:vista
-  if get(g:, 'eleline_slim', 0)
-    return l:prefix.'%<'.l:common
+  " let l:prefix = l:bufnr_winnr.l:paste
+  " let l:common = l:curfname.l:branch.l:status.l:error.l:warning.l:tags.l:lcn.l:coc.l:vista
+  let l:prefix = l:project.l:paste
+  let l:common = l:curfname.l:error.l:warning.l:tags.l:lcn.l:coc.l:vista
+
+  if get(g:, 'eleline_pablo', 0)
+    return l:prefix.'%<'.l:common.'%='.l:branch
   endif
+
   let l:tot = s:def('ElelineTotalBuf')
   let l:fsize = '%#ElelineFsize#%{ElelineFsize(@%)}%*'
   let l:m_r_f = '%#Eleline7# %m%r%y %*'
@@ -288,7 +297,7 @@ function! s:hi(group, dark, light, ...) abort
 endfunction
 
 function! s:hi_statusline() abort
-  call s:hi('ElelineBufnrWinnr' , [232 , 178]    , [89 , '']  )
+  call s:hi('PabloProject' , [232 , 178]    , [89 , '']  )
   call s:hi('ElelineTotalBuf'   , [178 , s:bg+8] , [240 , ''] )
   call s:hi('ElelinePaste'      , [232 , 178]    , [232 , 178]    , 'bold')
   call s:hi('ElelineFsize'      , [250 , s:bg+6] , [235 , ''] )
@@ -310,17 +319,17 @@ endfunction
 
 function! s:InsertStatuslineColor(mode) abort
   if a:mode ==# 'i'
-    call s:hi('ElelineBufnrWinnr' , [251, s:bg+8] , [251, s:bg+8])
+    call s:hi('PabloProject' , [251, s:bg+8] , [251, s:bg+8])
   elseif a:mode ==# 'r'
-    call s:hi('ElelineBufnrWinnr' , [232, 160], [232, 160])
+    call s:hi('PabloProject' , [232, 160], [232, 160])
   else
-    call s:hi('ElelineBufnrWinnr' , [232, 178], [89, ''])
+    call s:hi('PabloProject' , [232, 178], [89, ''])
   endif
 endfunction
 
-function! s:qf() abort
-  let l:bufnr_winnr = s:def('ElelineBufnrWinnr')
-  let &l:statusline = l:bufnr_winnr."%{exists('w:quickfix_title')? ' '.w:quickfix_title : ''} %l/%L %p"
+function! s:quickfix() abort
+  let l:project = s:def('PabloProject')
+  let &l:statusline = l:pablo."%{exists('w:quickfix_title')? ' '.w:quickfix_title : ''} %l/%L %p"
 endfunction
 
 " Note that the "%!" expression is evaluated in the context of the
@@ -343,12 +352,12 @@ augroup eleline
   autocmd!
   autocmd User GitGutter,Startified,LanguageClientStarted call s:SetStatusLine()
   " Change colors for insert mode
-  autocmd InsertLeave * call s:hi('ElelineBufnrWinnr', [232, 178], [89, ''])
-  autocmd InsertEnter,InsertChange * call s:InsertStatuslineColor(v:insertmode)
+  " autocmd InsertLeave * call s:hi('PabloProject', [232, 178], [89, ''])
+  " autocmd InsertEnter,InsertChange * call s:InsertStatuslineColor(v:insertmode)
   autocmd BufWinEnter,ShellCmdPost,BufWritePost * call s:SetStatusLine()
   autocmd FileChangedShellPost,ColorScheme * call s:SetStatusLine()
   autocmd FileReadPre,ShellCmdPost,FileWritePost * call s:SetStatusLine()
-  autocmd FileType qf call s:qf()
+  autocmd FileType qf call s:quickfix()
 augroup END
 
 let &cpoptions = s:save_cpo
